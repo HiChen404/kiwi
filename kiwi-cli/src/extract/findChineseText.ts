@@ -75,11 +75,30 @@ function removeFileComment(code, fileName) {
  * 查找 Ts 文件中的中文
  * @param code
  */
-function findTextInTs(code: string, fileName: string) {
+function findTextInTs(code: string, fileName: string, ignoreFn: string[]) {
   const matches = [];
   const ast = ts.createSourceFile('', code, ts.ScriptTarget.ES2015, true, ts.ScriptKind.TSX);
 
   function visit(node: ts.Node) {
+    const isIgnoredFunctionCall = (node: ts.Node): boolean => {
+      if (ts.isCallExpression(node)) {
+        const expression = node.expression;
+        if (ts.isIdentifier(expression) && ignoreFn.includes(expression.text)) {
+          return true;
+        }
+        if (ts.isPropertyAccessExpression(expression)) {
+          const fullName = `${expression.expression.getText()}.${expression.name.text}`;
+          return ignoreFn.includes(fullName);
+        }
+      }
+      return false;
+    };
+
+    if (isIgnoredFunctionCall(node)) {
+      console.log("Skipping ignored function call:", node.getText());
+      return;
+    }
+
     switch (node.kind) {
       case ts.SyntaxKind.StringLiteral: {
         /** 判断 Ts 中的字符串含有中文 */
@@ -166,12 +185,12 @@ function findTextInTs(code: string, fileName: string) {
  */
 function findTextInJs(code: string) {
   const matches = [];
-  const ast = babelParser.parse(code, { 
-    sourceType: "module", 
+  const ast = babelParser.parse(code, {
+    sourceType: "module",
     plugins: [
       'jsx',
       'decorators-legacy'
-    ] 
+    ]
   })
 
   babelTraverse.default(ast, {
@@ -469,7 +488,7 @@ function findVueText(ast) {
  * 递归匹配代码的中文
  * @param code
  */
-function findChineseText(code: string, fileName: string) {
+function findChineseText(code: string, fileName: string, ignoreFn: string[]) {
   if (fileName.endsWith('.html')) {
     return findTextInHtml(code);
   } else if (fileName.endsWith('.vue')) {
@@ -477,7 +496,7 @@ function findChineseText(code: string, fileName: string) {
   } else if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) {
     return findTextInJs(code);
   } else {
-    return findTextInTs(code, fileName);
+    return findTextInTs(code, fileName, ignoreFn);
   }
 }
 

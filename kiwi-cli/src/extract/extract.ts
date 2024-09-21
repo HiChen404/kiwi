@@ -59,7 +59,7 @@ function findAllChineseText(dir: string) {
   });
   const allTexts = filterFiles.reduce((pre, file) => {
     const code = readFile(file);
-    const texts = findChineseText(code, file);
+    const texts = findChineseText(code, file, CONFIG.ignoreFn);
     // 调整文案顺序，保证从后面的文案往前替换，避免位置更新导致替换出错
     const sortTexts = _.sortBy(texts, obj => -obj.range.start);
     if (texts.length > 0) {
