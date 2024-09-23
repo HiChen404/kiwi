@@ -13,7 +13,7 @@ import { extractAll } from './extract/extract';
 import { translate } from './translate';
 import { getTranslateOriginType } from './utils';
 import * as ora from 'ora';
-
+import { restoreAll } from './restore';
 /**
  * 进度条加载
  * @param text
@@ -41,6 +41,7 @@ commander
   .option('--unused', '导出未使用的文案')
   .option('--extract [dirPath]', '一键替换指定文件夹下的所有中文文案')
   .option('--prefix [prefix]', '指定替换中文文案前缀')
+  .option('--restore [ignoreFnList]', '将ignoreFn中的函数调用恢复为中文')
   .parse(process.argv);
 
 if (commander.init) {
@@ -152,4 +153,14 @@ if (commander.extract) {
 
     extractAll(extractAllParams);
   }
+}
+
+if (commander.restore) {
+  const restoreFnList = (commander.restore as string).split(';');
+  console.log('🚀 -> ignoreFnList:', restoreFnList);
+
+  restoreAll({
+    filePath: isString(commander.file) && commander.file,
+    restoreFnList: restoreFnList
+  });
 }
